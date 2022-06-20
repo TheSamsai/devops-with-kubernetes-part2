@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-output-dep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-output
+  template:
+    metadata:
+      labels:
+        app: log-output
+    spec:
+      volumes:
+        - name: shared-log
+          emptyDir: {}
+      containers:
+        - name: log-output-generate
+          image: thesamsai/log-output-generate:v3
+          volumeMounts:
+            - name: shared-log
+              mountPath: /shared
+        - name: log-output-view
+          image: thesamsai/log-output-view:v2
+          volumeMounts:
+            - name: shared-log
+              mountPath: /shared

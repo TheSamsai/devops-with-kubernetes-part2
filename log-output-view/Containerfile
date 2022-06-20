@@ -1,0 +1,11 @@
+FROM rust:latest AS builder
+
+COPY . /app
+WORKDIR /app/
+RUN cargo build --release
+
+from debian:latest
+RUN mkdir -p /app
+COPY --from=builder /app/target/release/log-output-view /app
+WORKDIR /app/ 
+CMD ["./log-output-view"]

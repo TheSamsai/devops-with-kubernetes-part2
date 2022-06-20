@@ -1,0 +1,11 @@
+[package]
+name = "log-output-generate"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+uuid = { version = "1.1.2", features = ["v4"] }
+chrono = "0.4.19"
+tokio = { version = "1.19.2", features = ["full"] }
