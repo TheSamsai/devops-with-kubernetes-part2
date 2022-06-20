@@ -23,7 +23,13 @@ spec:
             - name: shared-log
               mountPath: /shared
         - name: log-output-view
-          image: thesamsai/log-output-view:v3
+          image: thesamsai/log-output-view:v4
           volumeMounts:
             - name: shared-log
               mountPath: /shared
+          env:
+            - name: MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: log-output-config
+                  key: message_text

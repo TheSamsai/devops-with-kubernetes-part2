@@ -11,6 +11,7 @@ use axum::{
 async fn main() {
     let port = std::env::var("PORT").map(|val| val.parse::<u16>().unwrap()).unwrap_or(3000);
     let ping_pong_svc = std::env::var("PING_PONG_SVC").unwrap_or(String::from("http://ping-pong-svc"));
+    let message = std::env::var("MESSAGE").unwrap_or(String::from(""));
 
     let app = Router::new().route("/", get(|| async move {
         let mut log_file = File::open("/shared/log.txt").expect("Failed to open file!");
@@ -20,7 +21,7 @@ async fn main() {
 
         let ping_pong_message = reqwest::get(format!("{}/count", ping_pong_svc)).await.unwrap().text().await.unwrap();
 
-        format!("{}\nPing / Pongs: {}", log_message, ping_pong_message)
+        format!("{}\n{}\nPing / Pongs: {}", message, log_message, ping_pong_message)
     }));
 
     let addr = SocketAddr::from(([0,0,0,0], port));
