@@ -22,7 +22,7 @@ spec:
             - name: shared-log
               mountPath: /shared
         - name: log-output-view
-          image: thesamsai/log-output-view:v2
+          image: thesamsai/log-output-view:v3
           volumeMounts:
             - name: shared-log
               mountPath: /shared
