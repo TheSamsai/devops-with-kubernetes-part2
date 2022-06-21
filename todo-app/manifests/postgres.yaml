@@ -48,7 +48,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: postgres-config
-                  key: postgress-db
+                  key: postgres-db
   volumeClaimTemplates:
     - metadata:
         name: data

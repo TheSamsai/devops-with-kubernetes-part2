@@ -31,7 +31,7 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: postgres-config
-                key: postgress-host
+                key: postgres-host
           - name: POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
