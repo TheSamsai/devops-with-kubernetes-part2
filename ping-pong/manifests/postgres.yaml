@@ -43,7 +43,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: postgres-password
-                  key: POSTGRES_PASSOWRD
+                  key: POSTGRES_PASSWORD
             - name: POSTGRES_DB
               value: "pingpong"
   volumeClaimTemplates:
