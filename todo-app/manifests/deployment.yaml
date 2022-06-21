@@ -20,10 +20,20 @@ spec:
             claimName: image-claim
       containers:
         - name: todo-app
-          image: thesamsai/todo-app:v4
+          image: thesamsai/todo-app:v5
           volumeMounts:
           - name: image-volume
             mountPath: /shared/image
           env:
           - name: IMAGE_DIR
             value: "/shared/image"
+          - name: POSTGRES
+            valueFrom:
+              configMapKeyRef:
+                name: postgres-config
+                key: postgress-host
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-password
+                key: POSTGRES_PASSWORD

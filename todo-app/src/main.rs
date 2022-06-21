@@ -13,9 +13,14 @@ use tokio::{process::Command, sync::Mutex};
 use tera::Tera;
 use tera::Context;
 
+use sqlx::{postgres::PgPoolOptions, PgPool};
+
 type ImageAge = Arc<Mutex<Instant>>;
 type ImageStorage = Arc<String>;
-type TodoStorage = Arc<Mutex<Vec<String>>>;
+
+mod models;
+
+use models::Todo;
 
 #[tokio::main]
 async fn main() {
@@ -25,7 +30,16 @@ async fn main() {
     let image_age: ImageAge = Arc::new(Mutex::new(Instant::now()));
     download_image_of_the_day(image_storage.clone()).await;
 
-    let todo_storage = Arc::new(Mutex::new(Vec::<String>::new()));
+    let postgres_password = std::env::var("POSTGRES_PASSWORD").unwrap_or(String::from("password"));
+    let postgres_host = std::env::var("POSTGRES").unwrap_or(String::from("localhost/todos"));
+
+    let postgres = format!("postgres://postgres:{}@{}", postgres_password, postgres_host);
+
+    let pool: PgPool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&postgres).await.expect("Failed to connect to Postgres!");
+
+    initialize_database(&pool).await;
 
     let tera = match Tera::new("templates/**/*") {
         Ok(t) => t,
@@ -43,7 +57,7 @@ async fn main() {
         .route("/", get(index_page).post(post_todo_form))
         .layer(Extension(image_storage))
         .layer(Extension(image_age))
-        .layer(Extension(todo_storage))
+        .layer(Extension(pool))
         .layer(Extension(tera));
 
     let addr = SocketAddr::from(([0,0,0,0], port));
@@ -56,19 +70,33 @@ async fn main() {
         .unwrap();
 }
 
+async fn initialize_database(pool: &PgPool) {
+    sqlx::query(
+        r#"
+CREATE TABLE IF NOT EXISTS todos
+(
+    id   BIGSERIAL PRIMARY KEY,
+    text TEXT NOT NULL
+);
+        "#
+    )
+    .execute(pool)
+    .await.expect("Failed to create database table");
+}
+
 async fn index_page(
     Extension(image_age_state): Extension<ImageAge>,
     Extension(image_storage): Extension<ImageStorage>,
-    Extension(todo_storage): Extension<TodoStorage>,
+    Extension(pool): Extension<PgPool>,
     Extension(tera): Extension<Tera>
 ) -> Html<String> {
     check_and_download_image_of_the_day(image_age_state, image_storage).await;
 
-    let todos = todo_storage.lock().await;
+    let todos = Todo::get_all(&pool).await;
 
     let mut context = Context::new();
 
-    context.insert("todos", &*todos);
+    context.insert("todos", &todos);
 
     Html(tera.render("index.html", &context).unwrap())
 }
@@ -80,32 +108,32 @@ struct TodoInput {
 
 async fn post_todo_form(
     Form(input): Form<TodoInput>,
-    Extension(todo_storage): Extension<TodoStorage>
+    Extension(pool): Extension<PgPool>
 ) -> Redirect {
-    let mut todos = todo_storage.lock().await;
+    let todo = Todo { id: 0, text: input.todo };
 
-    todos.push(input.todo);
+    todo.create(&pool).await;
 
     Redirect::to("/")
 }
 
 async fn get_todos(
-    Extension(todo_storage): Extension<TodoStorage>
-) -> Json<Vec<String>> {
-    let mut todos = todo_storage.lock().await;
+    Extension(pool): Extension<PgPool>
+) -> Json<Vec<Todo>> {
+    let mut todos = Todo::get_all(&pool).await;
 
-    return Json(todos.clone());
+    return Json(todos);
 }
 
 async fn post_todo(
     Json(payload): Json<TodoInput>,
-    Extension(todo_storage): Extension<TodoStorage>
-) -> Json<Vec<String>> {
-    let mut todos = todo_storage.lock().await;
+    Extension(pool): Extension<PgPool>
+) -> Json<Vec<Todo>> {
+    let todo = Todo { id: 0, text: payload.todo };
 
-    todos.push(payload.todo);
+    todo.create(&pool).await;
 
-    return Json(todos.clone());
+    return Json(Todo::get_all(&pool).await);
 }
 
 async fn check_and_download_image_of_the_day(image_age: ImageAge, image_storage: ImageStorage) {
