@@ -112,7 +112,15 @@ async fn post_todo_form(
 ) -> Redirect {
     let todo = Todo { id: 0, text: input.todo };
 
+    if todo.text.len() > 140 {
+        println!("Todo too long: {}", todo.text);
+
+        return Redirect::to("/");
+    }
+
     todo.create(&pool).await;
+
+    println!("Todo added via form");
 
     Redirect::to("/")
 }
@@ -131,7 +139,15 @@ async fn post_todo(
 ) -> Json<Vec<Todo>> {
     let todo = Todo { id: 0, text: payload.todo };
 
+    if todo.text.len() > 140 {
+        println!("Todo too long: {}", todo.text);
+
+        return Json(Todo::get_all(&pool).await);
+    }
+
     todo.create(&pool).await;
+
+    println!("Todo added via POST /todos");
 
     return Json(Todo::get_all(&pool).await);
 }
@@ -140,6 +156,7 @@ async fn check_and_download_image_of_the_day(image_age: ImageAge, image_storage:
     let mut image_age = image_age.lock().await;
 
     if Instant::now().duration_since(*image_age).as_secs() > 24 * 60 * 60 {
+        println!("Updating image of the day");
         download_image_of_the_day(image_storage).await;
         *image_age = Instant::now();
     }

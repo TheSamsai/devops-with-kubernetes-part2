@@ -1,0 +1,6 @@
+FROM fedora:36
+
+COPY . /app
+WORKDIR /app
+
+CMD ["bash", "todo.sh"]
