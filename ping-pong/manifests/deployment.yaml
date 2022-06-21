@@ -15,4 +15,12 @@ spec:
     spec:
       containers:
         - name: ping-pong
-          image: thesamsai/ping-pong:v3
+          image: thesamsai/ping-pong:v4
+          env:
+            - name: POSTGRES
+              value: "postgres-svc/pingpong"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-password
+                  key: POSTGRES_PASSWORD

@@ -1,0 +1,57 @@
+apiVersion: v1 # Includes the Service for lazyness
+kind: Service
+metadata:
+  namespace: log-apps
+  name: postgres-svc
+  labels:
+    app: postgres
+spec:
+  ports:
+  - port: 5432
+    name: db
+  clusterIP: None
+  selector:
+    app: postgresapp
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: log-apps
+  name: postgres-ss
+spec:
+  serviceName: postgres-svc
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresapp
+  template:
+    metadata:
+      labels:
+        app: postgresapp
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:14.3
+          ports:
+            - name: db
+              containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-password
+                  key: POSTGRES_PASSOWRD
+            - name: POSTGRES_DB
+              value: "pingpong"
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 1Mi
