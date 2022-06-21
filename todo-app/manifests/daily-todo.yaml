@@ -12,4 +12,7 @@ spec:
           containers:
           - name: daily-todo
             image: thesamsai/daily-todo:v1
+            env:
+              - name: URL
+                value: "http://todo-app-svc:2345/todos"
           restartPolicy: OnFailure
