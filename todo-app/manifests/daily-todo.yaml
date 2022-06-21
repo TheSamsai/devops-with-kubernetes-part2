@@ -12,3 +12,4 @@ spec:
           containers:
           - name: daily-todo
             image: thesamsai/daily-todo:v1
+          restartPolicy: OnFailure
